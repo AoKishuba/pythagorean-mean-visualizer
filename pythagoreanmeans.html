@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualization of Pythagorean Means</title>
+  <style>
+    body {
+      font-family: Verdana, Geneva, Tahoma, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin-top: 20px;
+    }
+    input[type="number"] {
+      width: 160px;
+      margin: 5px;
+      padding: 5px;
+      font-size: 16px;
+    }
+    button {
+      padding: 8px 15px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Visualization of Pythagorean Means</h1>
+  <p>Enter two numbers to see the geometric construction of their Pythagorean means.</p>
+  <form id="input-form">
+    <input type="number" id="number1" placeholder="Number 1" required>
+    <input type="number" id="number2" placeholder="Number 2" required>
+    <button type="submit">Visualize</button>
+  </form>
+  <canvas id="pythagoreanCanvas" width="600" height="400"></canvas>
+
+  <script>
+    // Select elements
+    const form = document.getElementById('input-form');
+    const canvas = document.getElementById('pythagoreanCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Size canvas to fit screen
+    canvas.width = document.documentElement.clientWidth * 0.8;
+    canvas.height = document.documentElement.clientHeight * 0.75;
+
+    // Function to draw means
+    function drawMeans(a, b) {
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      const hCenter = canvasWidth / 2;
+      const vCenter = canvasHeight / 2;
+
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      // Scale the inputs to fit the canvas
+      const sum = a + b;
+      const hScaleFactor = canvasWidth / sum * 0.8;
+      const vScaleFactor = canvasHeight / sum * 0.8;
+      const scaleFactor = Math.min(hScaleFactor, vScaleFactor);
+      const scaledA = a * scaleFactor;
+      const scaledB = b * scaleFactor;
+      const scaledSum = scaledA + scaledB;
+
+      // Coordinates for the line segments
+      // Ensure line segments are centered on canvas
+      const hOffset = scaledSum / 2;
+      const leftBound = hCenter - hOffset;
+      const rightBound = hCenter + hOffset;
+      const vOffset = scaledSum / 4; // radius, not diameter
+      const downBound = vCenter + vOffset;
+      const upBound = vCenter - vOffset;
+
+      const startX = leftBound;
+      const startY = downBound;
+      const endX1 = startX + scaledA;
+      const endX2 = endX1 + scaledB;
+
+      // Draw the line segments
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX1, startY); // Segment for 'a'
+      ctx.lineTo(endX2, startY); // Segment for 'b'
+      ctx.stroke();
+
+      // Mark points
+      ctx.fillStyle = 'red';
+      ctx.beginPath();
+      ctx.arc(startX, startY, 5, 0, 2 * Math.PI); // Start point
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(endX1, startY, 5, 0, 2 * Math.PI); // Division point
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(endX2, startY, 5, 0, 2 * Math.PI); // End point
+      ctx.fill();
+
+      // Calculate means
+      const arithmeticMean = (a + b) / 2;
+      const geometricMean = Math.sqrt(a * b);
+      const harmonicMean = (2 * a * b) / (a + b);
+      const quadraticMean = Math.sqrt((a**2 + b**2) / 2);
+
+      const scaledArithmeticMean = arithmeticMean * scaleFactor;
+      const scaledGeometricMean = geometricMean * scaleFactor;
+      const scaledHarmonicMean = harmonicMean * scaleFactor;
+
+      // Calculate vertices
+      const arithmeticIntersectY = downBound - scaledArithmeticMean;
+      const geometricIntersectY = downBound - scaledGeometricMean;
+      // Geometric construction requires a small right triangle
+      // "inner" means "nearer the center of the arc"
+      const harmonicTriangleHypotenuse = endX1 - hCenter;
+      const harmonicTriangleInnerAngle = Math.atan2(scaledGeometricMean, harmonicTriangleHypotenuse);
+      const harmonicTriangleInnerSideLength = harmonicTriangleHypotenuse * Math.cos(harmonicTriangleInnerAngle);
+      const harmonicTriangleCX = hCenter + harmonicTriangleInnerSideLength * Math.cos(harmonicTriangleInnerAngle);
+      const harmonicTriangleCY = downBound - harmonicTriangleInnerSideLength * Math.sin(harmonicTriangleInnerAngle);
+
+      // Draw the means
+      // Arc
+      ctx.beginPath();
+      ctx.arc(hCenter, downBound, (scaledSum / 2), Math.PI, 0);
+      ctx.stroke();
+
+      // Arithmetic
+      ctx.strokeStyle = 'red';
+      ctx.beginPath();
+      ctx.moveTo(hCenter, downBound);
+      ctx.lineTo(hCenter, downBound - scaledArithmeticMean);
+      ctx.stroke();
+
+      // Geometric
+      ctx.strokeStyle = 'blue';
+      ctx.beginPath();
+      ctx.moveTo(endX1, downBound);
+      ctx.lineTo(endX1, downBound - scaledGeometricMean);
+      ctx.stroke();
+
+      // Harmonic
+      // Triangle
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(hCenter, downBound);
+      ctx.lineTo(harmonicTriangleCX, harmonicTriangleCY);
+      ctx.lineTo(endX1, downBound);
+      ctx.stroke();
+      // Mean
+      ctx.strokeStyle = 'purple';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(harmonicTriangleCX, harmonicTriangleCY);
+      ctx.lineTo(endX1, geometricIntersectY);
+      ctx.stroke();
+
+      // Quadratic
+      ctx.strokeStyle = 'lime';
+      ctx.beginPath();
+      ctx.moveTo(endX1, downBound);
+      ctx.lineTo(hCenter, arithmeticIntersectY);
+      ctx.stroke();
+
+      // Add labels
+      ctx.fillStyle = 'black';
+      ctx.fillText(`Quadratic Mean (green): ${quadraticMean.toFixed(2)}`, 50, canvasHeight - 80);
+      ctx.fillText(`Arithmetic Mean (red): ${arithmeticMean.toFixed(2)}`, 50, canvasHeight - 60);
+      ctx.fillText(`Geometric Mean (blue): ${geometricMean.toFixed(2)}`, 50, canvasHeight - 40);
+      ctx.fillText(`Harmonic Mean (purple): ${harmonicMean.toFixed(2)}`, 50, canvasHeight - 20);
+      const aLabelWidth = ctx.measureText(`A: ${a}`).width;
+      const bLabelWidth = ctx.measureText(`B: ${b}`).width;
+      ctx.fillText(`A: ${a}`, (leftBound + endX1) / 2 - aLabelWidth / 2, downBound + 20);
+      ctx.fillText(`B: ${b}`, (rightBound + endX1) / 2 - bLabelWidth / 2, downBound + 20);
+    }
+
+    // Form submission event
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const a = parseFloat(document.getElementById('number1').value);
+      const b = parseFloat(document.getElementById('number2').value);
+
+      if (a > 0 && b > 0) {
+        drawMeans(a, b);
+      } else {
+        alert('Please enter positive numbers.');
+      }
+    });
+  </script>
+</body>
+</html>
